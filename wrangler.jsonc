@@ -1,0 +1,10 @@
+{
+  // Sample worker config. Rename __PACK_NAME__ on clone, then run
+  // wrangler deploy from the pack root.
+  "name": "__PACK_NAME__",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-01-01",
+  "vars": {
+    "PACK_NAME": "__PACK_NAME__"
+  }
+}
