@@ -55,7 +55,7 @@ node dist/cli.js mcp
 This repo is a template. Replace each slot in each file that holds it.
 
 - `__PACK_NAME__`: the directory name, like `my-pack`.
-- `__NPM_NAME__`: the npm name, like `@pooriaarab/my-pack`.
+- `__NPM_NAME__`: the npm name, like `agentic-<block>` (bare name, never @pooriaarab/ scoped unless the brief says scoped).
 - `__PACK_COMMAND__`: the terminal command, like `my-pack`.
 - `__PACK_DESCRIPTION__`: one plain sentence, under 100 chars.
 - `__PACK_KEYWORDS__`: plain keywords, like `notes, search, cli`.
