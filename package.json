@@ -1,6 +1,6 @@
 {
   "name": "agentic-book",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Calendar API wrapper for Node.js with Google Calendar and Cal.com booking requests, Calendly availability requests, CLI, MCP, and offline previews.",
   "keywords": [
     "google-calendar",
