@@ -1,16 +1,17 @@
 {
   "name": "agentic-book",
-  "version": "0.1.0",
-  "description": "Offer open slots and book meetings across calendar vendors.",
+  "version": "0.1.1",
+  "description": "Offer open slots and book meetings with Google Calendar, Cal.com, and Calendly from a CLI or MCP agent.",
   "keywords": [
-    "calendar",
-    "booking",
-    "scheduling",
     "google-calendar",
-    "calcom",
+    "cal.com",
     "calendly",
+    "book-meetings",
+    "meeting-booking",
+    "calendar",
     "cli",
-    "mcp"
+    "mcp",
+    "agent"
   ],
   "license": "MIT",
   "author": "Pooria Arab",

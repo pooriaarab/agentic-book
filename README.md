@@ -1,6 +1,6 @@
 # Agentic book
 
-Offer open slots and book meetings across calendar vendors.
+Agentic book offers open slots and books meetings with Google Calendar, Cal.com, and Calendly. Use it from a CLI, an MCP agent, or the SDK.
 
 ## Install
 
@@ -12,7 +12,7 @@ npm install agentic-book
 
 ## Quickstart
 
-Preview is the default. No key is needed for a preview.
+The default command is a dry run. It exits 0. It does not use the network.
 
 ```sh
 npx agentic-book slots --start 2026-11-01T09:00:00Z --end 2026-11-01T12:00:00Z
@@ -20,7 +20,21 @@ npx agentic-book book --slot-start 2026-11-01T09:00:00Z --slot-end 2026-11-01T09
 npx agentic-book costs
 ```
 
-Use the SDK with the same JSON shapes.
+## Vendors
+
+Live commands need the listed environment key. Calendly offers availability only.
+
+| Brand | Environment key | Live command |
+| --- | --- | --- |
+| Google Calendar | `GOOGLE_CALENDAR_ACCESS_TOKEN` | `npx agentic-book book --live --vendor google --calendar primary --slot-start 2026-11-01T09:00:00Z --slot-end 2026-11-01T09:30:00Z --name "Ada Lovelace" --email ada@example.com` |
+| Cal.com | `CALCOM_API_KEY` | `npx agentic-book book --live --vendor calcom --event-type 123 --slot-start 2026-11-01T09:00:00Z --slot-end 2026-11-01T09:30:00Z --name "Ada Lovelace" --email ada@example.com` |
+| Calendly | `CALENDLY_API_TOKEN` | `npx agentic-book slots --vendor calendly --event-type-uri https://api.calendly.com/event_types/UUID --start 2026-11-01T09:00:00Z --end 2026-11-01T12:00:00Z` |
+
+Calendly does not create invitee bookings through its public API. Use its scheduling link to complete a Calendly booking.
+
+## SDK
+
+Use the SDK with the same input shapes.
 
 ```js
 import { findSlots, bookMeeting } from "agentic-book";
@@ -37,38 +51,13 @@ const receipt = await bookMeeting({
 });
 ```
 
-Use it to offer consultation times, schedule customer meetings, and
-create internal appointments.
-
-## Live bookings and keys
-
-Add `--live` to book a meeting. Live calls need a vendor and its key.
-Missing keys return an error. Vendor errors remain errors.
-
-| Vendor | Environment key | Live booking |
-| --- | --- | --- |
-| Google Calendar | GOOGLE_CALENDAR_ACCESS_TOKEN | Yes |
-| Cal.com | CALCOM_API_KEY | Yes |
-| Calendly | CALENDLY_API_TOKEN | Availability only |
-
-```sh
-npx agentic-book book --live --vendor google --calendar primary --slot-start 2026-11-01T09:00:00Z --slot-end 2026-11-01T09:30:00Z --name "Ada Lovelace" --email ada@example.com
-npx agentic-book book --live --vendor calcom --event-type 123 --slot-start 2026-11-01T09:00:00Z --slot-end 2026-11-01T09:30:00Z --name "Ada Lovelace" --email ada@example.com
-```
-
-Calendly exposes availability through its public API but does not
-create invitee bookings through that API. Use its scheduling link to
-complete a Calendly booking.
-
 ## MCP
 
 ```sh
 npx agentic-book mcp
 ```
 
-Tools are `find_slots`, `book_meeting`, and `get_cost_report`.
-`book_meeting` defaults to `live: false` and uses the same input and
-result shapes as the SDK and CLI.
+Tools are `find_slots`, `book_meeting`, and `get_cost_report`. `book_meeting` defaults to `live: false`.
 
 ## License
 
