@@ -1,197 +1,30 @@
 #!/usr/bin/env node
-import { readFileSync, realpathSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import {
-  dispatchText,
-  getCostReport,
-  GuardError,
-  LocalRouterAdapter,
-  summarizeText,
-  VendorError,
-  type RouterAdapter,
-} from "./core.js";
+import { getCostReport, GuardError, VendorError } from "agentic-core";
+import { bookMeeting, findSlots, type AvailabilityRequest, type BookingRequest } from "./book.js";
 import { DEFAULT_BRAND } from "./index.js";
 import { VERSION } from "./version.js";
 
-export class UsageError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "UsageError";
-  }
-}
-
-export type CliCommand = "summary" | "dispatch" | "costs" | "mcp" | "help" | "version";
-
-export interface CliRequest {
-  command: CliCommand;
-  text?: string;
-  file?: string;
-  dryRun: boolean;
-  topN?: number;
-}
-
+export class UsageError extends Error { constructor(message: string) { super(message); this.name = "UsageError"; } }
+export interface CliRequest extends Partial<BookingRequest> { command: "slots" | "book" | "costs" | "mcp" | "help" | "version"; }
+const flags = { "--vendor": "vendor", "--start": "start", "--end": "end", "--duration": "durationMinutes", "--calendar": "calendarId", "--event-type": "eventTypeId", "--event-type-uri": "eventTypeUri", "--slot-start": "slotStart", "--slot-end": "slotEnd", "--name": "name", "--email": "email", "--title": "title", "--notes": "notes" } as const;
 export function parseArgs(argv: string[]): CliRequest {
-  const request: CliRequest = { command: "help", dryRun: false };
-  const args = [...argv];
-  const first = args.shift();
-  if (first === undefined || first === "--help" || first === "-h") {
-    return request;
-  }
-  if (first === "--version" || first === "-V") {
-    request.command = "version";
-    return request;
-  }
-  if (first !== "summary" && first !== "dispatch" && first !== "costs" && first !== "mcp") {
-    throw new UsageError(`unknown command "${first}"`);
-  }
-  request.command = first;
-  while (args.length > 0) {
-    const flag = args.shift() as string;
-    if (flag === "--dry-run" && request.command === "dispatch") {
-      request.dryRun = true;
-      continue;
-    }
-    if ((flag === "--text" || flag === "--file" || flag === "--top") && args.length > 0) {
-      const value = args.shift() as string;
-      if (flag === "--text") request.text = value;
-      if (flag === "--file") request.file = value;
-      if (flag === "--top") {
-        const topN = Number.parseInt(value, 10);
-        if (!Number.isInteger(topN) || topN < 0) {
-          throw new UsageError(`--top needs an integer of 0 or more, got "${value}"`);
-        }
-        request.topN = topN;
-      }
-      continue;
-    }
-    throw new UsageError(`unknown flag "${flag}" for "${request.command}"`);
-  }
-  if (
-    (request.command === "summary" || request.command === "dispatch") &&
-    request.text === undefined &&
-    request.file === undefined
-  ) {
-    throw new UsageError(`${request.command} needs --text or --file`);
-  }
-  return request;
+  const args = [...argv]; const first = args.shift() ?? "help";
+  const command = first === "--help" || first === "-h" ? "help" : first === "--version" || first === "-V" ? "version" : first;
+  if (!["slots", "book", "costs", "mcp", "help", "version"].includes(command)) throw new UsageError(`unknown command "${first}"`);
+  const req: CliRequest = { command: command as CliRequest["command"], vendor: "google", live: false };
+  while (args.length) { const flag = args.shift()!; if (flag === "--live" && command === "book") { req.live = true; continue; } if (!(flag in flags) || !["slots", "book"].includes(command)) throw new UsageError(`unknown flag "${flag}"`); const value = args.shift(); if (!value || value.startsWith("--")) throw new UsageError(`${flag} needs a value`); if (flag === "--duration") { const n = Number(value); if (!Number.isInteger(n) || n < 1) throw new UsageError("--duration needs a positive integer"); req.durationMinutes = n; } else if (flag === "--slot-start" || flag === "--slot-end") { const slot = req.slot ?? { start: "", end: "" }; slot[flag === "--slot-start" ? "start" : "end"] = value; req.slot = slot; } else Object.assign(req, { [flags[flag as keyof typeof flags]]: value }); }
+  if (command === "slots" && (!req.start || !req.end)) throw new UsageError("slots needs --start and --end");
+  if (command === "book" && (!req.slot?.start || !req.slot.end || !req.name || !req.email)) throw new UsageError("book needs --slot-start, --slot-end, --name, and --email");
+  return req;
 }
-
-export interface CliIo {
-  out(line: string): void;
-  err(line: string): void;
-  readFile(path: string): string;
-  router: RouterAdapter;
+export interface CliIo { out(line: string): void; err(line: string): void; fetchFn?: typeof fetch; now?: () => Date; }
+const defaultIo: CliIo = { out: (line) => console.log(line), err: (line) => console.error(line) };
+export function helpText(): string { return `Agentic book ${VERSION}\n${DEFAULT_BRAND.description}\n\nUsage: agentic-book <command> [flags]\nCommands: slots, book, costs, mcp, help, version\nslots --start <ISO> --end <ISO> [--vendor google|calcom|calendly]\nbook --slot-start <ISO> --slot-end <ISO> --name <name> --email <email> [--live]\n  --vendor google|calcom|calendly --calendar <id> --event-type <id>\ncosts: Print session cost JSON.\nmcp: Start MCP on stdio.`; }
+export async function runCli(argv: string[], io: CliIo = defaultIo): Promise<number> {
+  let req: CliRequest; try { req = parseArgs(argv); } catch (error) { io.err(`UsageError: ${error instanceof Error ? error.message : String(error)}`); return 2; }
+  try { switch (req.command) { case "help": io.out(helpText()); break; case "version": io.out(VERSION); break; case "costs": io.out(JSON.stringify(getCostReport())); break; case "mcp": await (await import("./mcp.js")).startMcp(); break; case "slots": io.out(JSON.stringify(await findSlots({ ...req, start: req.start!, end: req.end!, fetchFn: io.fetchFn } as AvailabilityRequest))); break; case "book": io.out(JSON.stringify(await bookMeeting({ ...req, slot: req.slot!, name: req.name!, email: req.email!, fetchFn: io.fetchFn, now: io.now } as BookingRequest))); break; } return 0; } catch (error) { if (error instanceof GuardError || error instanceof VendorError) { io.err(`${error.name}: ${error.message}`); return 1; } throw error; }
 }
-
-function defaultIo(): CliIo {
-  return {
-    out: (line) => console.log(line),
-    err: (line) => console.error(line),
-    readFile: (path) => readFileSync(path, "utf8"),
-    router: new LocalRouterAdapter(),
-  };
-}
-
-function helpText(): string {
-  const command = DEFAULT_BRAND.command;
-  return [
-    `${DEFAULT_BRAND.name} ${VERSION}`,
-    `${DEFAULT_BRAND.description}`,
-    "",
-    `Usage: ${command} <command> [flags]`,
-    "",
-    "Commands:",
-    "  summary --text <t> [--file <p>] [--top <n>]  Print text stats as JSON.",
-    "  dispatch --text <t> [--file <p>] [--dry-run] Route one text, print the receipt.",
-    "  costs                                      Print the cost report as JSON.",
-    "  mcp                                        Start the MCP server on stdio.",
-    "",
-    "Flags:",
-    "  --help, -h       Print this help.",
-    "  --version, -V    Print the version.",
-  ].join("\n");
-}
-
-function readInput(request: CliRequest, io: CliIo): string {
-  if (request.file !== undefined) {
-    return io.readFile(request.file);
-  }
-  return request.text ?? "";
-}
-
-export async function runCli(argv: string[], io: CliIo = defaultIo()): Promise<number> {
-  let request: CliRequest;
-  try {
-    request = parseArgs(argv);
-  } catch (error) {
-    io.err(error instanceof Error ? error.message : String(error));
-    io.err(`Run "${DEFAULT_BRAND.command} --help" for usage.`);
-    return 2;
-  }
-  try {
-    switch (request.command) {
-      case "help":
-        io.out(helpText());
-        return 0;
-      case "version":
-        io.out(VERSION);
-        return 0;
-      case "summary": {
-        const summary = summarizeText(readInput(request, io), { topN: request.topN });
-        io.out(JSON.stringify(summary));
-        return 0;
-      }
-      case "dispatch": {
-        const result = await dispatchText(readInput(request, io), {
-          adapter: io.router,
-          dryRun: request.dryRun,
-        });
-        io.out(JSON.stringify(result));
-        return 0;
-      }
-      case "costs":
-        io.out(JSON.stringify(getCostReport()));
-        return 0;
-      case "mcp": {
-        const { startMcp } = await import("./mcp.js");
-        await startMcp();
-        return 0;
-      }
-    }
-  } catch (error) {
-    if (error instanceof GuardError || error instanceof VendorError || error instanceof UsageError) {
-      io.err(`${error.name}: ${error.message}`);
-      return 1;
-    }
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      io.err(`file not found: ${request.file ?? ""}`);
-      return 1;
-    }
-    throw error;
-  }
-}
-
-function isMainModule(): boolean {
-  const invoked = process.argv[1];
-  if (typeof invoked !== "string") return false;
-  try {
-    return import.meta.url === pathToFileURL(realpathSync(invoked)).href;
-  } catch {
-    return false;
-  }
-}
-
-if (isMainModule()) {
-  runCli(process.argv.slice(2)).then(
-    (code) => {
-      // Exit nonzero at once. On zero, fall off the end so a running
-      // server (mcp) keeps its stdio handles open. Plain commands
-      // hold no handles and exit 0 on their own.
-      if (code !== 0) process.exit(code);
-    },
-    (error: unknown) => {
-      console.error(error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    },
-  );
-}
+function isMainModule(): boolean { try { return typeof process.argv[1] === "string" && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href; } catch { return false; } }
+if (isMainModule()) runCli(process.argv.slice(2)).then((code) => { if (code) process.exit(code); }, (error: unknown) => { console.error(error instanceof Error ? error.message : String(error)); process.exit(1); });

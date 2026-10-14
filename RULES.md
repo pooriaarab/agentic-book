@@ -1,13 +1,7 @@
-# __PACK_NAME__ rules
+# agentic-book rules
 
-These rules bind every run of __PACK_COMMAND__. They also bind
-agents that drive this pack over MCP.
-
-1. Preview before you act. Run each dispatch with dry run first.
-2. Respect guards. A denied call stays denied.
-3. Report failures as failures. Adapters throw, and callers surface
-   the error. No silent success follows a failed call.
-4. Count the cost. Read the cost report before you close a task.
-5. Keep quiet hours. The pack refuses routes inside the window.
-
-Pack: __PACK_DESCRIPTION__ Keywords: __PACK_KEYWORDS__.
+1. Preview before booking. Live is opt-in.
+2. Respect guard denials.
+3. Report vendor errors as failures.
+4. Read the cost report before closing a live task.
+5. Calendly availability is not a booking.

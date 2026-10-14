@@ -1,47 +1,14 @@
 export { VERSION } from "./version.js";
-export {
-  defineBrand,
-  createLogger,
-  GuardError,
-  VendorError,
-  createGuards,
-  LocalRouterAdapter,
-  HttpRouterAdapter,
-  recordCost,
-  getCostReport,
-  resetCosts,
-  createDryRunResult,
-  dispatchText,
-  summarizeText,
-} from "./core.js";
-export type {
-  BrandConfig,
-  LogLevel,
-  Logger,
-  LoggerOptions,
-  CapsConfig,
-  QuietHoursConfig,
-  GuardsConfig,
-  Guards,
-  DispatchReceipt,
-  RouterAdapter,
-  HttpRouterOptions,
-  CostEntry,
-  CostReport,
-  DispatchOptions,
-  DispatchResult,
-  TopWord,
-  TextSummary,
-  SummarizeOptions,
-} from "./core.js";
-
-import { defineBrand, type BrandConfig } from "./core.js";
+export { createBookingGuards, findSlots, bookMeeting } from "./book.js";
+export type { BookingVendor, TimeSlot, AvailabilityRequest, AvailabilityResult, BookingRequest, BookingReceipt } from "./book.js";
+export { defineBrand, createLogger, GuardError, VendorError, createGuards, recordCost, getCostReport, resetCosts } from "agentic-core";
+export type { BrandConfig, Guards, GuardsConfig, Logger } from "agentic-core";
+import { defineBrand, type BrandConfig } from "agentic-core";
 import { VERSION } from "./version.js";
-
 export const DEFAULT_BRAND: BrandConfig = defineBrand({
-  name: "Agentic pack",
-  command: "agentic-pack",
-  description: "Canonical scaffold for a CLI plus library plus MCP server pack.",
-  keywords: ["cli", "mcp", "scaffold", "starter", "typescript"],
+  name: "Agentic book",
+  command: "agentic-book",
+  description: "Offer open slots and book meetings across calendar vendors.",
+  keywords: ["calendar", "booking", "scheduling", "google-calendar", "calcom", "calendly", "cli", "mcp"],
   version: VERSION,
 });
