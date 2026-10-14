@@ -1,17 +1,22 @@
 {
   "name": "agentic-book",
   "version": "0.1.1",
-  "description": "Offer open slots and book meetings with Google Calendar, Cal.com, and Calendly from a CLI or MCP agent.",
+  "description": "Calendar API wrapper for Node.js with Google Calendar and Cal.com booking requests, Calendly availability requests, CLI, MCP, and offline previews.",
   "keywords": [
     "google-calendar",
     "cal.com",
+    "calcom",
     "calendly",
-    "book-meetings",
+    "calendar-api",
     "meeting-booking",
-    "calendar",
+    "booking-preview",
+    "availability",
+    "freebusy",
+    "nodejs",
+    "typescript",
     "cli",
     "mcp",
-    "agent"
+    "scheduling"
   ],
   "license": "MIT",
   "author": "Pooria Arab",
