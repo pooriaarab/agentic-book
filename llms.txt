@@ -1,15 +1,9 @@
-# __PACK_NAME__
+# agentic-book
 
-__PACK_DESCRIPTION__
+Offer open slots and book meetings across Google Calendar, Cal.com, and Calendly.
 
-Keywords: __PACK_KEYWORDS__.
+- SDK: `findSlots`, `bookMeeting` from `agentic-book`.
+- CLI: `agentic-book slots` and `agentic-book book`.
+- MCP: `find_slots`, `book_meeting`, `get_cost_report`.
 
-- SDK: import { summarizeText, dispatchText } from "__NPM_NAME__".
-- CLI: __PACK_COMMAND__ summary --text "...".
-- MCP: run __PACK_COMMAND__ mcp, then call summarize_text.
-
-## Docs
-
-- README: https://github.com/__GITHUB_USER__/__PACK_NAME__
-- Core contract: https://github.com/__GITHUB_USER__/__PACK_NAME__/blob/main/docs/agentic-core.md
-- License: MIT
+Dry run is the default. Live calls need vendor keys.
